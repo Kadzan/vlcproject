@@ -8,17 +8,17 @@ import glob
 import random
 from win32gui import GetWindowText, GetForegroundWindow, MoveWindow
 import argparse
-from multiprocessing import Process
 
 import series_config as config
 
+
 class Series:
     """
+    Save file format:
         [FILE]
         TIME #Float between 0 and 1
+    TODO: DONE FOR NOW WOOOO
     """
-
-    # TODO: DONE FOR NOW WOOOO
 
     def __init__(self):
         self.parse_config()
@@ -84,7 +84,7 @@ class Series:
         sys.exit(0)
 
     def test_method(self):
-        print (config.series)
+        pass
 
     def shufflestuff(self):
         all_files = []
@@ -136,10 +136,6 @@ class Series:
                 progress = saved_data[1]
             except Exception:
                 print('EXCEPTION')
-
-            # for bla in episodes:
-            #     print(bla)
-            # print (saved_data)
 
         self.current_file = episodes[0]
         if os.path.exists(self.current_file):
