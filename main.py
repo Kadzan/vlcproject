@@ -12,6 +12,8 @@ import argparse
 import series_config as config
 
 
+#RUN vlc.exe --reset-plugins-cache IF YOU GET STALE PLUGIN CACHE... SHIT DOESNT DO IT AUTO CAUSE ??????
+
 class Series:
     """
     Save file format:
@@ -34,10 +36,17 @@ class Series:
             self.test_method()
             sys.exit(0)
 
+        # self.output = sys.stdout
+        # sys.stdout = None
+        # sys.stderr = None
+
         if self.args.fork:
             print('Forking disabled, retry without fork')
             print('Just use pythonw...')
             sys.exit(1)
+        elif self.args.ver:
+            self.print_version()
+            sys.exit(0)
         elif self.args.random:
             print('picking random episode')
             if self.args.reshuffle:
@@ -47,6 +56,18 @@ class Series:
             self.series = self.args.series
             self.play_series(self.series_dirs[self.series])
             sys.exit(0)
+
+
+    def print_version(self):
+        """Print version of this vlc.py and of the libvlc"""
+        try:
+            print('%s: %s (%s)' % (os.path.basename(__file__), __version__, build_date))
+            print('LibVLC version: %s (%#x)' % (bytes_to_str(libvlc_get_version()), libvlc_hex_version()))
+            print('LibVLC compiler: %s' % bytes_to_str(libvlc_get_compiler()))
+            if plugin_path:
+                print('Plugin path: %s' % plugin_path)
+        except Exception:
+            print('Error: %s' % sys.exc_info()[1])
 
     def parse_config(self):
         self.random_dirs = config.random_dirs
@@ -58,6 +79,7 @@ class Series:
         series = self.possible_series + ['random']
         options = argparse.ArgumentParser()
         options.add_argument('--fork', help='subproc this shit', action='store_true', dest='fork')
+        options.add_argument('-v', help='show libvlc ver', action='store_true', dest='ver')
 
         group = options.add_mutually_exclusive_group(required=True)
         group.add_argument('-s', '--series', type=str, dest='series',
@@ -109,9 +131,9 @@ class Series:
                 self.shufflestuff()
 
         self.current_file = files[0].strip()
-        print(type(self.current_file))
+        # print(type(self.current_file))
         print(self.current_file)
-        print(os.path.exists(self.current_file))
+        # print(os.path.exists(self.current_file))
         if os.path.exists(self.current_file):
             self.player = vlc.MediaPlayer(self.current_file)
             self.player.play()
@@ -139,6 +161,7 @@ class Series:
 
         self.current_file = episodes[0]
         if os.path.exists(self.current_file):
+            print(self.current_file)
             self.player = vlc.MediaPlayer(self.current_file)
             self.player.play()
             time.sleep(0.2)
@@ -188,7 +211,11 @@ class Series:
                 new_med = vlc.Media(next_file)
                 self.player.set_media(new_med)
                 self.player.play()
+                time.sleep(0.2)
+                while not self.player.is_playing():
+                    time.sleep(0.5)
                 self.current_file = next_file
+                print(self.current_file)
                 if self.fullscreen:
                     self.player.set_fullscreen(True)
                 else:
