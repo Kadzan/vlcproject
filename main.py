@@ -11,7 +11,6 @@ import argparse
 
 import series_config as config
 
-
 #RUN vlc.exe --reset-plugins-cache IF YOU GET STALE PLUGIN CACHE... SHIT DOESNT DO IT AUTO CAUSE ??????
 
 class Series:
@@ -44,9 +43,24 @@ class Series:
             print('Forking disabled, retry without fork')
             print('Just use pythonw...')
             sys.exit(1)
+        elif self.args.status:
+            print('Status of all current shows:')
+            for k, v in config.series.items():
+                prettyPrint = v.split('\\')[-1]
+                series_path = k + '_save.txt'
+                if os.path.exists(series_path):
+                    with open(series_path, 'r') as fin:
+                        print('{:<25} - {}'.format(prettyPrint, fin.readlines()[0].split('\\')[-1].strip()))
+                else:
+                    print('{:<25} - Not Started'.format(prettyPrint))
         elif self.args.ver:
             self.print_version()
             sys.exit(0)
+        elif self.args.list_series:
+            for x in config.series:
+                print(x)
+            # for x, y in config.series.items():
+            #     print("Series: {}, Key: {}".format(y, x))
         elif self.args.random:
             print('picking random episode')
             if self.args.reshuffle:
@@ -56,7 +70,6 @@ class Series:
             self.series = self.args.series
             self.play_series(self.series_dirs[self.series])
             sys.exit(0)
-
 
     def print_version(self):
         """Print version of this vlc.py and of the libvlc"""
@@ -80,8 +93,12 @@ class Series:
         options = argparse.ArgumentParser()
         options.add_argument('--fork', help='subproc this shit', action='store_true', dest='fork')
         options.add_argument('-v', help='show libvlc ver', action='store_true', dest='ver')
+        # options.add_argument('--status', help='Show status of all series', action='store_true', dest='status')
+
 
         group = options.add_mutually_exclusive_group(required=True)
+        group.add_argument('--status', help='Show status of all series', action='store_true', dest='status')
+        group.add_argument('-ls', '--list-series', action='store_true', dest='list_series')
         group.add_argument('-s', '--series', type=str, dest='series',
             help='which series to start (default: random)', choices=series, default='random')
         group.add_argument('--random', help='random episode of random show', action='store_true', dest='random')
@@ -146,7 +163,7 @@ class Series:
         self.main_loop(files)
 
     def play_series(self, dir):
-        episodes = self.get_episodes([dir])
+        episodes = sorted(self.get_episodes([dir]))
         saved_data = self.get_saved_data(self.series)
         progress = 0
         if saved_data == -1:
@@ -156,8 +173,8 @@ class Series:
                 index = episodes.index(saved_data[0].strip())
                 del episodes[:index]
                 progress = saved_data[1]
-            except Exception:
-                print('EXCEPTION')
+            except Exception as e:
+                print('Exception: {}'.format(e))
 
         self.current_file = episodes[0]
         if os.path.exists(self.current_file):
@@ -276,7 +293,6 @@ class Series:
         else:
             time.sleep(1)
             return 0
-
 
 if __name__ == "__main__":
     Series()
